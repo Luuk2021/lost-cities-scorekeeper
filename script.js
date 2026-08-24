@@ -65,11 +65,12 @@ function renderExpeditions(){
  const player=state.current[activePlayer];
  const otherPlayer=state.current[activePlayer===0?1:0];
  const c=COLORS[activeExpedition],e=player.expeditions[activeExpedition],s=scoreExp(e);
+ const otherExpedition=otherPlayer.expeditions[activeExpedition];
  document.getElementById("stepProgress").textContent=roundComplete?"Round complete":`${state.names[activePlayer]} · Expedition ${activeExpedition+1} of ${COLORS.length}`;
  document.getElementById("nextRoundActions").hidden=true;
  document.getElementById("nextExpeditionBtn").hidden=false;
  document.getElementById("expeditions").innerHTML=(()=>{
-   const wagerButtons=[1,2,3].map(n=>`<button class="wager ${e.wagers>=n?"active":""}" data-wager="${n}">Wager ${n}</button>`).join("");
+  const wagerButtons=[1,2,3].map(n=>`<button class="wager ${e.wagers===n?"active":""}" data-wager="${n}" ${n>3-otherExpedition.wagers&&e.wagers!==n?"disabled":""}>Wager ${n}</button>`).join("");
    const cards=CARD_VALUES.map(v=>{
      const selected=Boolean(e.counts[v]),taken=Boolean(otherPlayer.expeditions[activeExpedition].counts[v]);
      return `<button class="card-cell qty ${selected?"selected":""}" type="button" data-card="${v}" ${taken&&!selected?"disabled":""} aria-label="${c.name} ${v} card${taken&&!selected?" already used":""}"><span>${v}</span><strong>${selected?"✓":"□"}</strong></button>`
@@ -90,6 +91,7 @@ function renderExpeditions(){
 
  document.querySelectorAll(".wager").forEach(b=>b.onclick=()=>{
    const n=+b.dataset.wager;
+  if(n>3-otherExpedition.wagers&&e.wagers!==n)return;
    state.current[activePlayer].expeditions[activeExpedition].wagers=
      state.current[activePlayer].expeditions[activeExpedition].wagers===n?n-1:n;
    persist();render()
@@ -167,6 +169,8 @@ document.getElementById("undoBtn").onclick=()=>{
  state.rounds.pop();persist();render();toast("Last round removed")
 };
 ["player1","player2"].forEach((id,i)=>document.getElementById(id).oninput=e=>{
- state.names[i]=e.target.value.trim()||(i?"Opponent":"You");persist();render()
+ state.names[i]=e.target.value;persist();
+ document.getElementById(`p${i+1}Label`).textContent=e.target.value||(i?"Opponent":"You");
+ document.querySelectorAll(".tab")[i].textContent=e.target.value||(i?"Opponent":"You");
 });
 render();
