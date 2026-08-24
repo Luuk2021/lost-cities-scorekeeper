@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#18212b">
+  <title>Lost Cities Scorekeeper</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main class="app">
+  <header class="hero">
+    <div>
+      <p class="eyebrow">LOST CITIES</p>
+      <h1>Scorekeeper</h1>
+      <p class="subtitle">Tap cards to count them. Finish each expedition, then pass device.</p>
+    </div>
+    <div class="actions">
+      <button id="undoBtn" class="ghost" disabled>Undo round</button>
+      <button id="newGameBtn" class="danger">New game</button>
+    </div>
+  </header>
+
+  <section class="panel players">
+    <label>Player 1<input id="player1" maxlength="24" value="You"></label>
+    <label>Player 2<input id="player2" maxlength="24" value="Opponent"></label>
+  </section>
+
+  <section class="panel scoreboard">
+    <div><span id="p1Label">You</span><strong id="p1Total">0</strong><small>Total</small></div>
+    <b>VS</b>
+    <div><span id="p2Label">Opponent</span><strong id="p2Total">0</strong><small>Total</small></div>
+  </section>
+
+  <div class="tabs">
+    <button class="tab active" data-player="0">You</button>
+    <button class="tab" data-player="1">Opponent</button>
+  </div>
+
+  <div id="stepProgress" class="step-progress"></div>
+  <section id="expeditions" class="expeditions"></section>
+
+  <div class="round-actions">
+    <button id="backExpeditionBtn" class="secondary">Back</button>
+    <button id="nextExpeditionBtn" class="primary">Next expedition</button>
+    <button id="clearRoundBtn" class="secondary">Clear round</button>
+  </div>
+
+  <div id="nextRoundActions" class="next-round-actions" hidden>
+    <button id="nextRoundBtn" class="primary">Next round</button>
+  </div>
+
+  <section class="panel history">
+    <div class="history-head">
+      <div><p class="eyebrow">GAME LOG</p><h2>Score history</h2></div>
+      <button id="clearHistoryBtn" class="ghost">Clear history</button>
+    </div>
+    <div id="historyContent"></div>
+  </section>
+
+  <footer>Scores are saved in this browser. No account or server required.</footer>
+</main>
+<div id="toast" class="toast"></div>
+<script src="script.js"></script>
+</body>
+</html>
