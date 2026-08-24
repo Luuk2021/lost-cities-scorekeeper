@@ -9,6 +9,9 @@ const STORAGE="lost-cities-scorekeeper-v2";
 let activePlayer=0;
 let activeExpedition=0;
 let roundComplete=false;
+let currentDraft=null;
+let viewingPrevious=false;
+let editingRoundIndex=-1;
 
 function emptyExp(){return{wagers:0,counts:Object.fromEntries(CARD_VALUES.map(v=>[v,0]))}}
 function emptyPlayer(){return{expeditions:COLORS.map(emptyExp)}}
@@ -61,19 +64,17 @@ function render(){
 }
 
 function renderExpeditions(){
- if(roundComplete){renderScoreReview();return}
  const player=state.current[activePlayer];
  const otherPlayer=state.current[activePlayer===0?1:0];
- const c=COLORS[activeExpedition],e=player.expeditions[activeExpedition],s=scoreExp(e);
- const otherExpedition=otherPlayer.expeditions[activeExpedition];
- document.getElementById("stepProgress").textContent=roundComplete?"Round complete":`${state.names[activePlayer]} · Expedition ${activeExpedition+1} of ${COLORS.length}`;
- document.getElementById("nextRoundActions").hidden=true;
- document.getElementById("nextExpeditionBtn").hidden=false;
- document.getElementById("expeditions").innerHTML=(()=>{
-  const wagerButtons=[1,2,3].map(n=>`<button class="wager ${e.wagers===n?"active":""}" data-wager="${n}" ${n>3-otherExpedition.wagers&&e.wagers!==n?"disabled":""}>Wager ${n}</button>`).join("");
+ document.getElementById("stepProgress").textContent=editingRoundIndex>=0?`Editing round ${editingRoundIndex+1}`:`Round ${state.rounds.length+1} · ${state.names[activePlayer]}`;
+ document.getElementById("nextRoundBtn").textContent=editingRoundIndex>=0?"Go to current round":"Next round";
+ document.querySelector(".round-actions").classList.toggle("editing",editingRoundIndex>=0);
+ document.getElementById("expeditions").innerHTML=COLORS.map((c,expeditionIndex)=>{
+   const e=player.expeditions[expeditionIndex],s=scoreExp(e),otherExpedition=otherPlayer.expeditions[expeditionIndex];
+   const wagerButtons=[1,2,3].map(n=>`<button class="wager ${e.wagers===n?"active":""}" data-exp="${expeditionIndex}" data-wager="${n}" ${n>3-otherExpedition.wagers&&e.wagers!==n?"disabled":""}>Wager ${n}</button>`).join("");
    const cards=CARD_VALUES.map(v=>{
-     const selected=Boolean(e.counts[v]),taken=Boolean(otherPlayer.expeditions[activeExpedition].counts[v]);
-     return `<button class="card-cell qty ${selected?"selected":""}" type="button" data-card="${v}" ${taken&&!selected?"disabled":""} aria-label="${c.name} ${v} card${taken&&!selected?" already used":""}"><span>${v}</span><strong>${selected?"✓":"□"}</strong></button>`
+     const selected=Boolean(e.counts[v]),taken=Boolean(otherExpedition.counts[v]);
+     return `<button class="card-cell qty ${selected?"selected":""}" type="button" data-exp="${expeditionIndex}" data-card="${v}" ${taken&&!selected?"disabled":""} aria-label="${c.name} ${v} card${taken&&!selected?" already used":""}"><span>${v}</span><strong>${selected?"✓":"□"}</strong></button>`
    }).join("");
    return `<article class="expedition ${c.key}">
     <div class="exp-head"><h3>${c.name}</h3><span class="exp-score">${fmt(s.score)}</span></div>
@@ -87,40 +88,34 @@ function renderExpeditions(){
        <div><span>8-card bonus</span><strong>${s.bonus?"+20":"—"} ${s.started?`(${s.cardCount+s.wagers} total cards)`:""}</strong></div>
       </div>
     </div></article>`
- })();
+ }).join("");
 
  document.querySelectorAll(".wager").forEach(b=>b.onclick=()=>{
+   const expedition=+b.dataset.exp;
    const n=+b.dataset.wager;
-  if(n>3-otherExpedition.wagers&&e.wagers!==n)return;
-   state.current[activePlayer].expeditions[activeExpedition].wagers=
-     state.current[activePlayer].expeditions[activeExpedition].wagers===n?n-1:n;
-   persist();render()
+   const expeditionData=state.current[activePlayer].expeditions[expedition];
+   const otherExpeditionData=otherPlayer.expeditions[expedition];
+   if(n>3-otherExpeditionData.wagers&&expeditionData.wagers!==n)return;
+   expeditionData.wagers=expeditionData.wagers===n?n-1:n;
+  persistEditedRound();render()
  });
  document.querySelectorAll(".qty").forEach(button=>button.onclick=()=>{
+   const expedition=+button.dataset.exp;
    const c=+button.dataset.card;
-   const current=state.current[activePlayer].expeditions[activeExpedition].counts[c];
-  state.current[activePlayer].expeditions[activeExpedition].counts[c]=current?0:1;
-   persist();render()
+   const expeditionData=state.current[activePlayer].expeditions[expedition];
+   expeditionData.counts[c]=expeditionData.counts[c]?0:1;
+  persistEditedRound();render()
  });
-}
-
-function renderScoreReview(){
- document.getElementById("stepProgress").textContent="Check round score";
- document.getElementById("nextExpeditionBtn").hidden=true;
- document.getElementById("nextRoundActions").hidden=false;
- document.getElementById("expeditions").innerHTML=`<section class="score-review">
-  <div class="review-head"><p class="eyebrow">ROUND COMPLETE</p><h2>Check scores before next round</h2></div>
-  <div class="review-grid">${state.names.map((name,i)=>`<article class="review-player"><h3>${esc(name)}</h3>${state.current[i].expeditions.map((e,index)=>{const s=scoreExp(e);return `<div class="review-row"><span>${COLORS[index].name.replace(" Expedition","")}</span><strong>${fmt(s.score)}</strong></div>`}).join("")}<div class="review-total"><span>Round total</span><strong>${fmt(playerScore(state.current[i]))}</strong></div></article>`).join("")}</div>
- </section>`;
 }
 
 function renderHistory(){
  const host=document.getElementById("historyContent");
  if(!state.rounds.length){host.innerHTML='<div class="empty">No saved rounds yet.</div>';return}
  const totals=state.names.map((_,i)=>state.rounds.reduce((sum,r)=>sum+r.scores[i],0));
- host.innerHTML=`<table><thead><tr><th>Round</th><th>${esc(state.names[0])}</th><th>${esc(state.names[1])}</th></tr></thead><tbody>${
-   state.rounds.map((r,i)=>`<tr><td>${i+1}</td><td>${fmt(r.scores[0])}</td><td>${fmt(r.scores[1])}</td></tr>`).join("")
- }</tbody><tfoot><tr><th>Total</th><th>${fmt(totals[0])}</th><th>${fmt(totals[1])}</th></tr></tfoot></table>`
+ host.innerHTML=`<table><thead><tr><th>Round</th><th>${esc(state.names[0])}</th><th>${esc(state.names[1])}</th><th>Action</th></tr></thead><tbody>${
+   state.rounds.map((r,i)=>`<tr><td>${i+1}</td><td>${fmt(r.scores[0])}</td><td>${fmt(r.scores[1])}</td><td><button class="edit-round" data-round="${i}">Edit</button></td></tr>`).join("")
+ }</tbody><tfoot><tr><th>Total</th><th>${fmt(totals[0])}</th><th>${fmt(totals[1])}</th><th></th></tr></tfoot></table>`
+ document.querySelectorAll(".edit-round").forEach(button=>button.onclick=()=>editRound(+button.dataset.round));
 }
 
 function hasCards(){
@@ -130,12 +125,25 @@ function toast(msg){
  const x=document.getElementById("toast");x.textContent=msg;x.classList.add("show");
  clearTimeout(window.__toast);window.__toast=setTimeout(()=>x.classList.remove("show"),1700)
 }
+function scrollToFirstExpedition(){
+ const firstExpedition=document.querySelector(".expedition");
+ if(firstExpedition)window.scrollTo({top:Math.max(0,firstExpedition.offsetTop-72),behavior:"instant"});
+}
 function nextRound(){
- state.rounds.push({scores:[playerScore(state.current[0]),playerScore(state.current[1])],at:Date.now()});
- state.current=[emptyPlayer(),emptyPlayer()];activePlayer=0;activeExpedition=0;roundComplete=false;persist();render();toast("Next round")
+ if(editingRoundIndex>=0){goToCurrentRound();return}
+ const round={scores:[playerScore(state.current[0]),playerScore(state.current[1])],current:JSON.parse(JSON.stringify(state.current)),at:Date.now()};
+ state.rounds.push(round);state.current=[emptyPlayer(),emptyPlayer()];activePlayer=0;activeExpedition=0;persist();render();scrollToFirstExpedition();toast("Next round")
+}
+function persistEditedRound(){
+ if(editingRoundIndex<0){persist();return}
+ state.rounds[editingRoundIndex]={scores:[playerScore(state.current[0]),playerScore(state.current[1])],current:JSON.parse(JSON.stringify(state.current)),at:state.rounds[editingRoundIndex].at};
+ persist()
+}
+function goToCurrentRound(){
+ state.current=currentDraft||[emptyPlayer(),emptyPlayer()];currentDraft=null;editingRoundIndex=-1;activePlayer=0;activeExpedition=0;persist();render();scrollToFirstExpedition();toast("Current round")
 }
 function clearCurrent(){
- state.current=[emptyPlayer(),emptyPlayer()];activePlayer=0;activeExpedition=0;roundComplete=false;persist();render();toast("Current round cleared")
+ state.current=[emptyPlayer(),emptyPlayer()];editingRoundIndex=-1;activePlayer=0;activeExpedition=0;persist();render();toast("Current round cleared")
 }
 function nextExpedition(){
  if(roundComplete)return;
@@ -143,20 +151,19 @@ function nextExpedition(){
  if(activePlayer===0){activePlayer=1;activeExpedition=0;render();toast(`${state.names[1]} turn`);return}
  roundComplete=true;render();toast("Round scored")
 }
-function previousExpedition(){
- if(roundComplete){roundComplete=false;render();return}
- if(activeExpedition>0){activeExpedition--;render();return}
- if(activePlayer===1){activePlayer=0;activeExpedition=COLORS.length-1;render();toast(`${state.names[0]} turn`);return}
- toast("Already at first expedition")
-}
 function newGame(){
  if(!confirm("Start a new game? This clears the score history."))return;
- state.rounds=[];state.current=[emptyPlayer(),emptyPlayer()];activePlayer=0;activeExpedition=0;roundComplete=false;persist();render();toast("New game started")
+ state.rounds=[];state.current=[emptyPlayer(),emptyPlayer()];editingRoundIndex=-1;activePlayer=0;activeExpedition=0;persist();render();toast("New game started")
+}
+
+function editRound(index){
+ const round=state.rounds[index];
+ if(!round.current){toast("This round cannot be edited");return}
+ currentDraft=JSON.parse(JSON.stringify(state.current));
+ state.current=JSON.parse(JSON.stringify(round.current));editingRoundIndex=index;activePlayer=0;activeExpedition=0;render();scrollToFirstExpedition();toast(`Editing round ${index+1}`)
 }
 
 document.querySelectorAll(".tab").forEach((b,i)=>b.onclick=()=>{activePlayer=i;render()});
-document.getElementById("backExpeditionBtn").onclick=previousExpedition;
-document.getElementById("nextExpeditionBtn").onclick=nextExpedition;
 document.getElementById("nextRoundBtn").onclick=nextRound;
 document.getElementById("clearRoundBtn").onclick=clearCurrent;
 document.getElementById("newGameBtn").onclick=newGame;
