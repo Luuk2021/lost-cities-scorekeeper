@@ -2,7 +2,8 @@ const COLORS=[
  {key:"red",name:"Red Expedition"},
  {key:"green",name:"Green Expedition"},
  {key:"blue",name:"Blue Expedition"},
- {key:"yellow",name:"Yellow Expedition"}
+ {key:"yellow",name:"Yellow Expedition"},
+ {key:"white",name:"White Expedition"}
 ];
 const CARD_VALUES=[2,3,4,5,6,7,8,9,10];
 const STORAGE="lost-cities-scorekeeper-v2";
@@ -20,7 +21,16 @@ function load(){
  try{
    const x=JSON.parse(localStorage.getItem(STORAGE));
    if(x?.current&&x?.rounds){
-     x.current.forEach(p=>p.expeditions.forEach(e=>CARD_VALUES.forEach(v=>e.counts[v]=Boolean(e.counts[v]))));
+     const normalizePlayer=p=>{
+       p.expeditions=p.expeditions||[];
+       while(p.expeditions.length<COLORS.length)p.expeditions.push(emptyExp());
+       p.expeditions.forEach(e=>{
+         e.counts=e.counts||{};
+         CARD_VALUES.forEach(v=>e.counts[v]=Boolean(e.counts[v]));
+       });
+     };
+     x.current.forEach(normalizePlayer);
+     x.rounds.forEach(r=>r.current?.forEach(normalizePlayer));
      return x
    }
  }catch(e){}
