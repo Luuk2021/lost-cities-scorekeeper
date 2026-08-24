@@ -28,7 +28,7 @@ input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(181,90,60,.12)}
 .expedition{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow)}
 .exp-head{color:white;padding:14px 16px;display:flex;justify-content:space-between;align-items:center}
 .exp-head h3{margin:0}.exp-score{font-size:1.35rem;font-weight:900}
-.red .exp-head{background:#a9463e}.green .exp-head{background:#47745a}.blue .exp-head{background:#3d6387}.yellow .exp-head{background:#9a772b}
+.red .exp-head{background:#a9463e}.green .exp-head{background:#47745a}.blue .exp-head{background:#3d6387}.yellow .exp-head{background:#9a772b}.white .exp-head{background:#f3f1eb;color:var(--ink);border-bottom:1px solid var(--line)}
 .exp-body{padding:15px 16px}.field-title{font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;font-weight:900;color:var(--muted);margin-bottom:7px}
 .step-progress{text-align:center;color:var(--muted);font-size:.7rem;font-weight:900;letter-spacing:.08em;text-transform:uppercase;margin:0;padding:4px 0 0;border-bottom:1px solid var(--line);line-height:1.2}.wagers{display:flex;gap:7px;margin-bottom:16px}.wager{flex:1;background:#f5f1e8;border:1px solid var(--line);padding-inline:6px}
 .wager.active{background:var(--ink);color:white;border-color:var(--ink)}
