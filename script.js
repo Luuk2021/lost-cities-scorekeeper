@@ -81,7 +81,7 @@ function renderExpeditions(){
  document.querySelector(".round-actions").classList.toggle("editing",editingRoundIndex>=0);
  document.getElementById("expeditions").innerHTML=COLORS.map((c,expeditionIndex)=>{
    const e=player.expeditions[expeditionIndex],s=scoreExp(e),otherExpedition=otherPlayer.expeditions[expeditionIndex];
-   const wagerButtons=[1,2,3].map(n=>`<button class="wager ${e.wagers===n?"active":""}" data-exp="${expeditionIndex}" data-wager="${n}" ${n>3-otherExpedition.wagers&&e.wagers!==n?"disabled":""}>Wager ${n}</button>`).join("");
+   const wagerButtons=[1,2,3].map(n=>`<button class="wager ${e.wagers===n?"active":""}" data-exp="${expeditionIndex}" data-wager="${n}" ${n>3-otherExpedition.wagers&&e.wagers!==n?"disabled":""}>Doubler ${n}</button>`).join("");
    const cards=CARD_VALUES.map(v=>{
      const selected=Boolean(e.counts[v]),taken=Boolean(otherExpedition.counts[v]);
      return `<button class="card-cell qty ${selected?"selected":""}" type="button" data-exp="${expeditionIndex}" data-card="${v}" ${taken&&!selected?"disabled":""} aria-label="${c.name} ${v} card${taken&&!selected?" already used":""}"><span>${v}</span><strong>${selected?"✓":"□"}</strong></button>`
@@ -89,7 +89,7 @@ function renderExpeditions(){
    return `<article class="expedition ${c.key}">
     <div class="exp-head"><h3>${c.name}</h3><span class="exp-score">${fmt(s.score)}</span></div>
     <div class="exp-body">
-      <div class="field-title">Wager cards</div><div class="wagers">${wagerButtons}</div>
+      <div class="field-title">Doubler cards</div><div class="wagers">${wagerButtons}</div>
       <div class="field-title">Number cards (2–10)</div><div class="card-grid">${cards}</div>
       <div class="details">
        <div><span>Number cards</span><strong>${s.cardCount}</strong></div>
